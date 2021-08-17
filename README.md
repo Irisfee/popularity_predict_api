@@ -18,6 +18,9 @@ To use this API,
 2. run app.py
 3. type http://127.0.0.1:5000/ and upload the mp3 file in the webpage.
 4. wait about 20s and the predicted score will be on the screen!
+
+![](record/demo.gif)
+
 We will wrap these steps up with a docker container soon!
 
 # Reference
