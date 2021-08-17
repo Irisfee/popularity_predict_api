@@ -1,4 +1,3 @@
-import argparse
 from math import floor, log2
 from os import fsync, mkdir, path
 from shutil import rmtree
@@ -9,9 +8,12 @@ from scipy.stats import kendalltau, spearmanr
 from tensorflow.contrib import learn
 MEL_BIN = 128
 FRAME_NUM = 323
+TAG_SIZE = 50
+DR = 0.25
+LR = 5e-3
+
 def leaky_relu(x, alpha=0.1):
     return tf.nn.relu(x) - alpha * tf.nn.relu(-x)
-
 
 NON_LINEAR = leaky_relu
 
@@ -167,78 +169,61 @@ def tag_regression_clsf(tags, dr, mode):
 
     return logits_tag
 
-def score_pred_only(args):
-    print ('Pred only.')
+def score_pred_only(mel_data, tag_data):
+    print ('Predict popularity score')
     stdout.flush()
+    batch_size = 1
+    stt = 'm'
+    dr_rate = DR
+    loss_t_w = float(0.5)
+    # pred_f = 'ret30_pred.npy'
+    # pred_emb = 'ret30_pred.emb.npy'
 
-    train_set = args.train_set
-    batch_size = int(args.batch_size)
-    model_type = args.model_type
-    stt = args.secondary_target_type
-    use_tag = args.use_tag
-    tag_type = args.tag_type
-    dr_rate = float(args.dropout_rate)
-    model_dir = '{}.mdl/'.format(args.output)
-    loss_t_w = float(args.tagging_loss_weight)
-    pred_f = 'ret30_pred.npy'
-    pred_emb = 'ret30_pred.emb.npy'
-
-    test_feat = np.load(
-        path.join(train_set, 'xte.npy')).reshape(-1, MEL_BIN, FRAME_NUM, 1)
+    test_feat = mel_data.reshape(-1, MEL_BIN, FRAME_NUM, 1)
     y_num = test_feat.shape[0]
 
     test_pt, y_size, emb_size = None, 1, 78
     test_tags = None
-    if use_tag:
-        test_tags = np.load(
-            path.join(train_set, 'test_tgte.{}.npy'.format(tag_type)))
+    
+    test_tags = tag_data
 
     x_f = tf.placeholder(tf.float32, [None, MEL_BIN, FRAME_NUM, 1])
     y_t = tf.placeholder(tf.float32, [None, y_size])
     emb_t = tf.placeholder(tf.float32, [None, emb_size, 1])
     mode = tf.placeholder(tf.string)  # TRAIN, EVAL, INFER
     tags = None
-    if use_tag:
-        tags = tf.placeholder(tf.float32, [None, TAG_SIZE])
+
+    tags = tf.placeholder(tf.float32, [None, TAG_SIZE])
 
     logits_all = None
-    if model_type == 'incept':
-        print ('Model type: Inception CNN.\n')
-        logits_all = inception_cnn(
-            x_f, dr_rate, mode, stt)
-    else:
-        print ('Model type: Plain CNN.\n')
-        logits_all = cnn(
-            x_f, dr_rate, mode, stt)
+    
+    print ('Model type: Inception CNN.\n')
+    logits_all = inception_cnn(x_f, dr_rate, mode, stt)
 
     logits_pt = logits_all['pt']  # primary target(s)
     logits_emb = logits_all['emb']
-    if use_tag:
-        logits_tag = tag_regression_clsf(
-            tags, dr_rate, mode)
-        logits_pt += loss_t_w * logits_tag
+
+    logits_tag = tag_regression_clsf(
+        tags, dr_rate, mode)
+    logits_pt += loss_t_w * logits_tag
 
     saver = tf.train.Saver()
+    
     with tf.Session() as sess:
-        saver.restore(sess, path.join(model_dir, 'model.ckpt'))
+        saver.restore(sess, path.join(path.dirname(__file__), 'ret30.mdl', 'model.ckpt'))
         test_logitss, test_embs = None, None
         for test_pos in range(0, test_feat.shape[0], batch_size):
             b_f, b_y = make_batch(
                 test_feat, test_pt, np.arange(y_num), test_pos, batch_size)
-            if use_tag:
-                b_tg = make_tag_batch(
-                    test_tags, np.arange(y_num), test_pos, batch_size)
-                test_logits, test_emb = sess.run(
-                    [logits_pt, logits_emb],
-                    feed_dict={
-                        x_f: b_f, tags: b_tg,
-                        mode: learn.ModeKeys.INFER})
-            else:
-                test_logits, test_emb = sess.run(
-                    [logits_pt, logits_emb],
-                    feed_dict={
-                        x_f: b_f,
-                        mode: learn.ModeKeys.INFER})
+
+            b_tg = make_tag_batch(
+                test_tags, np.arange(y_num), test_pos, batch_size)
+            test_logits, test_emb = sess.run(
+                [logits_pt, logits_emb],
+                feed_dict={
+                    x_f: b_f, tags: b_tg,
+                    mode: learn.ModeKeys.INFER})
+
             test_emb = test_emb.reshape(-1, emb_size)
             if test_logitss is None:
                 test_logitss = test_logits  # * NORM_FACTOR
@@ -250,4 +235,4 @@ def score_pred_only(args):
             else:
                 test_embs = np.concatenate(
                     (test_embs, test_emb), axis=0)
-    print (test_logitss)
+    return test_logitss
