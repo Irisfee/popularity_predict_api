@@ -199,6 +199,12 @@ def feat_extract(mp3_file):
     
     return ret
 
+def compute_percentile(input_pop):
+
+    pop_npy = np.load(os.path.join(os.path.dirname(__file__), 'data', 'pop.npy')).tolist()
+    percentile = np.sum([input_pop > pop for pop in pop_npy])/len(pop_npy)*100
+
+    return percentile
 
 
     

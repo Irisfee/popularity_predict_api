@@ -10,6 +10,7 @@ import model.clip2frame
 from model.test_model_preppipline import predict_curSong
 from model.test_model_preppipline import feat_extract
 from model.cnn import score_pred_only
+from model.test_model_preppipline import compute_percentile
 
 app = Flask(__name__)
 
@@ -32,7 +33,8 @@ def upload_file():
     mel_Feature = feat_extract(file_name)
     tag_feature = predict_curSong(file_name)
     score = score_pred_only(mel_Feature, tag_feature).tolist()[0]
-    pop = score[0]
+    pop = round(score[0],0)
+    pop_percentile = round(compute_percentile(pop),2)
 
     # remove file
     os.remove(file_name)
