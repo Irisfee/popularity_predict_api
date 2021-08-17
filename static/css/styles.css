@@ -1,0 +1,30 @@
+h1 {
+    color: rgb(15, 16, 2);
+    text-align: center;
+    margin: 50px 0px;
+}
+h2 {
+    color: rgb(15, 16, 2);
+    text-align: center;
+    margin: 20px 10px;
+    margin: 10px 0px;
+  }
+
+
+.center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+.pcenter {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 10%;
+}
+
+body {
+    background-color: rgb(240, 219, 211);
+}

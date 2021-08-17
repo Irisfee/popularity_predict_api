@@ -31,12 +31,14 @@ def upload_file():
     # predict
     mel_Feature = feat_extract(file_name)
     tag_feature = predict_curSong(file_name)
-    score = score_pred_only(mel_Feature, tag_feature).tolist()
+    score = score_pred_only(mel_Feature, tag_feature).tolist()[0]
+    pop = score[0]
 
     # remove file
     os.remove(file_name)
 
-    return jsonify(score)
+    #return jsonify(score)
+    return render_template('result.html', **locals())
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')
