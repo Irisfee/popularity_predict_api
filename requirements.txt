@@ -1,0 +1,9 @@
+flask
+librosa
+tensorflow
+lasagne
+clip2frame
+theano
+sklearn
+numpy
+scipy
