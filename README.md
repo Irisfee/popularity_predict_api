@@ -16,7 +16,8 @@ We scaped the preview version of all songs belong to the mandopop genre on Spoti
 To use this API, 
 1. clone the repo and download the python module in the requirement.txt. 
 2. run app.py
-3. use [postman](https://www.postman.com) and type http://127.0.0.1:5000/predict and upload the mp3 file in the body session
+3. type http://127.0.0.1:5000/ and upload the mp3 file in the webpage.
+4. wait about 20s and the predicted score will be on the screen!
 We will wrap these steps up with a docker container soon!
 
 # Reference
