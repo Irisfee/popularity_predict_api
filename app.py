@@ -19,13 +19,22 @@ def infer_mp3():
     if 'file' not in request.files:
         return "Please try again. The mp3 file doesn't exist"
     
+    # get file
     file = request.files.get('file')
 
-    file_name = os.path.join(os.path.dirname(__file__), 'filestorage', 'test.mp3')
+    # temporarily save file 
+    store_dir = os.path.join(os.path.dirname(__file__), 'filestorage')
+    if not os.path.isdir(store_dir):
+        os.mkdir(store_dir)
+    file_name = os.path.join(store_dir, 'test.mp3')
     file.save(file_name)
+
+    # predict
     mel_Feature = feat_extract(file_name)
     tag_feature = predict_curSong(file_name)
-    score = score_pred_only(mel_Feature, tag_feature)
+    score = score_pred_only(mel_Feature, tag_feature).tolist()
+
+    # remove file
     os.remove(file_name)
 
     # Return on a JSON format
